@@ -2,7 +2,6 @@ from requests.exceptions import ProxyError, ConnectionError
 from bs4 import BeautifulSoup, Tag
 import requests
 import random
-import string
 import time
 
 
@@ -30,19 +29,21 @@ class Proxy:
         self.https = dct["Https"] == "yes"
         self.dict = dct
 
+        self.agent = USER_AGENTS[random.randint(0, len(USER_AGENTS) - 1)]
         self.protocol = "https" if self.https else "http"
         self.proxy = self.ip_address + ":" + self.port
         self.proxies = {self.protocol: self.proxy}
-        self.agent = USER_AGENTS[random.randint(0, len(USER_AGENTS) - 1)]
+        # self.proxies = {"http": self.proxy, "https": self.proxy}
+        self.headers = {"User-agent": self.agent, "Referer": "https://www.google.com/"}
 
     def request(self, url: str) -> bytes:
         try:
-            page = requests.get(url, headers={"User-Agent": self.agent}, proxies=self.proxies, timeout=TIMEOUT_SECONDS)
+            page = requests.get(url, headers=self.headers, proxies=self.proxies, timeout=TIMEOUT_SECONDS)
             print(page.headers)
         except ConnectionError:
             raise ProxyError
-        if page.status_code != 200:
-            raise ProxyError(f"Status code: {page.status_code}")
+        if not page.ok:
+            raise ProxyError(f"Status code: {page.status_code}. {page.reason}")
         return page.content
 
 

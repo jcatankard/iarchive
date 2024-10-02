@@ -49,7 +49,7 @@ class Proxy:
 
         self.agent = USER_AGENTS[random.randint(0, len(USER_AGENTS) - 1)]
         self.protocol = "https" if self.https else "http"
-        self.proxy = self.ip_address + ":" + self.port
+        self.proxy = self.protocol + "://" + self.ip_address + ":" + self.port
         self.proxies = {self.protocol: self.proxy}
         # self.proxies = {"http": self.proxy, "https": self.proxy}
         self.headers = {k: v for k, v in HEADERS.items()}

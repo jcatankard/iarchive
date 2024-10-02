@@ -1,9 +1,7 @@
 import streamlit.components.v1 as components
+from proxy_request import ProxyRequest
 from bs4 import BeautifulSoup
 import streamlit as st
-import requests
-import string
-import random
 
 
 URL_PREFIX = "https://archive.ph/"
@@ -13,9 +11,7 @@ TITLE = "Judit's iArchive"
 @st.cache_data
 def cache_request(url: str) -> bytes:
     """Avoid pinging the same url each time the dashboard is re-run."""
-    agent = "".join(random.choices(string.ascii_letters, k=7))
-    page = requests.get(url, headers={"User-agent": agent})
-    return page.content
+    return ProxyRequest().request(url)
 
 
 if __name__ == "__main__":

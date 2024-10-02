@@ -1,4 +1,4 @@
-from requests.exceptions import ProxyError
+from requests.exceptions import ProxyError, ConnectionError
 from bs4 import BeautifulSoup, Tag
 import requests
 import random
@@ -8,6 +8,12 @@ import time
 
 SLEEP_SECONDS = 1
 PROXY_RESOURCE = "https://free-proxy-list.net/"
+TIMEOUT_SECONDS = 3
+USER_AGENTS = [
+"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
+"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+"Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15",
+]
 
 
 class Proxy:
@@ -22,14 +28,21 @@ class Proxy:
         self.anonymity = dct["Anonymity"]
         self.google = dct["Google"] == "yes"
         self.https = dct["Https"] == "yes"
+        self.dict = dct
 
         self.protocol = "https" if self.https else "http"
         self.proxy = self.ip_address + ":" + self.port
         self.proxies = {self.protocol: self.proxy}
-        self.agent = "".join(random.choices(string.ascii_letters, k=7))
+        self.agent = USER_AGENTS[random.randint(0, len(USER_AGENTS) - 1)]
 
     def request(self, url: str) -> bytes:
-        page = requests.get(url, headers={"User-agent": self.agent}, proxies=self.proxies)
+        try:
+            page = requests.get(url, headers={"User-Agent": self.agent}, proxies=self.proxies, timeout=TIMEOUT_SECONDS)
+            print(page.headers)
+        except ConnectionError:
+            raise ProxyError
+        if page.status_code != 200:
+            raise ProxyError(f"Status code: {page.status_code}")
         return page.content
 
 
@@ -70,6 +83,7 @@ class ProxyRequest:
         if len(self.proxies) == 0:
             raise ValueError("There are no proxies to try")
         proxy = self.choose_proxy()
+        print(proxy.dict)
         try:
             return proxy.request(request_url)
         except ProxyError:

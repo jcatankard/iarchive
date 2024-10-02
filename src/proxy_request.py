@@ -5,61 +5,29 @@ import random
 import time
 
 
-SLEEP_SECONDS = 1
+SLEEP_SECONDS = 3
 PROXY_RESOURCE = "https://free-proxy-list.net/"
-TIMEOUT_SECONDS = 3
-USER_AGENTS = [
-"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
-"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
-"Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15",
-"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0"
-]
-HEADERS = {
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "en-GB,en;q=0.9,es;q=0.8,en-US;q=0.7,es-ES;q=0.6,es-US;q=0.5,es-419;q=0.4",
-        "Connection": "keep-alive",
-        # "Host": "httpbin.io",
-        "Referer": "https://www.google.com/",
-        # "Sec-Ch-Ua": "\"Microsoft Edge\";v=\"129\", \"Not=A?Brand\";v=\"8\", \"Chromium\";v=\"129\"",
-        "Sec-Ch-Ua-Mobile": "?0",
-        # "Sec-Ch-Ua-Platform": "\"Windows\"",
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "cross-site",
-        "Sec-Fetch-User": "?1",
-        "Upgrade-Insecure-Requests": "1",
-        "User-Agent": USER_AGENTS[0]
-}
 
 
 class Proxy:
 
     def __init__(self, headers: list[str], data: list[Tag]) -> None:
         data = [d.text for d in data]
-        dct = dict(zip(headers, data))
-        self.ip_address = dct["IP Address"]
-        self.port = str(dct["Port"])
-        self.code = dct["Code"]
-        self.country = dct["Country"]
-        self.anonymity = dct["Anonymity"]
-        self.google = dct["Google"] == "yes"
-        self.https = dct["Https"] == "yes"
-        self.dict = dct
+        self.dct = dict(zip(headers, data))
+        self.ip_address = self.dct["IP Address"]
+        self.port = str(self.dct["Port"])
+        self.code = self.dct["Code"]
+        self.country = self.dct["Country"]
+        self.anonymity = self.dct["Anonymity"]
+        self.google = self.dct["Google"] == "yes"
+        self.https = self.dct["Https"] == "yes"
 
-        self.agent = USER_AGENTS[random.randint(0, len(USER_AGENTS) - 1)]
         self.protocol = "https" if self.https else "http"
-        self.proxy = self.protocol + "://" + self.ip_address + ":" + self.port
+        self.proxy = f"{self.protocol}://{self.ip_address}:{self.port}"
         self.proxies = {self.protocol: self.proxy}
-        # self.proxies = {"http": self.proxy, "https": self.proxy}
-        self.headers = {k: v for k, v in HEADERS.items()}
-        self.headers["User-Agent"] = self.agent
 
     def request(self, url: str) -> bytes:
-        try:
-            page = requests.get(url, headers=self.headers, proxies=self.proxies, timeout=TIMEOUT_SECONDS)
-        except ConnectionError:
-            raise ProxyError
+        page = requests.get(url, proxies=self.proxies)
         if not page.ok:
             raise ProxyError(f"Status code: {page.status_code}. {page.reason}")
         return page.content
@@ -102,10 +70,11 @@ class ProxyRequest:
         if len(self.proxies) == 0:
             raise ValueError("There are no proxies to try")
         proxy = self.choose_proxy()
-        print(proxy.dict)
+        print(proxy.dct)
         try:
             return proxy.request(request_url)
-        except ProxyError:
+        except ProxyError as e:
+            print(e)
             self.remove_proxy(proxy)
             time.sleep(SLEEP_SECONDS)
             return self.request(request_url)

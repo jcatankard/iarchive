@@ -1,5 +1,6 @@
-from requests.exceptions import ProxyError, ConnectionError
+from requests.exceptions import ProxyError
 from bs4 import BeautifulSoup, Tag
+from typing import Optional
 import requests
 import random
 import time
@@ -7,6 +8,11 @@ import time
 
 SLEEP_SECONDS = 3
 PROXY_RESOURCE = "https://free-proxy-list.net/"
+USER_AGENTS = [
+"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
+"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+"Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15",
+]
 
 
 class Proxy:
@@ -26,11 +32,13 @@ class Proxy:
         self.proxy = f"{self.protocol}://{self.ip_address}:{self.port}"
         self.proxies = {self.protocol: self.proxy}
 
-    def request(self, url: str) -> bytes:
-        page = requests.get(url, proxies=self.proxies)
+        self.agent = USER_AGENTS[random.randint(0, len(USER_AGENTS) - 1)]
+
+    def request(self, url: str) -> str:
+        page = requests.get(url, proxies=self.proxies, headers={"User-agent": self.agent})
         if not page.ok:
             raise ProxyError(f"Status code: {page.status_code}. {page.reason}")
-        return page.content
+        return page.text
 
 
 class ProxyRequest:
@@ -66,15 +74,15 @@ class ProxyRequest:
         index = random.randint(0, len(self.proxies) - 1)
         return self.proxies[index]
 
-    def request(self, request_url: str) -> bytes:
+    def request(self, request_url: str) -> tuple[Optional[str], Optional[str]]:
         if len(self.proxies) == 0:
             raise ValueError("There are no proxies to try")
         proxy = self.choose_proxy()
         print(proxy.dct)
         try:
-            return proxy.request(request_url)
+            return proxy.request(request_url), None
         except ProxyError as e:
             print(e)
             self.remove_proxy(proxy)
             time.sleep(SLEEP_SECONDS)
-            return self.request(request_url)
+            return None, str(e)

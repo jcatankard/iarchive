@@ -21,10 +21,13 @@ if __name__ == "__main__":
         layout="centered"
     )
     st.title(TITLE)
+
     link = st.text_input("Webpage to lookup", placeholder="Add link here...")
     if len(link) == 0:
         st.stop()
-
+    r0 = cache_request(link)
+    st.html(r0)
+    st.stop()
     archive_url = URL_PREFIX + link
     r = cache_request(archive_url)
 

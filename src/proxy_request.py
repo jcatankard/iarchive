@@ -3,10 +3,8 @@ from bs4 import BeautifulSoup, Tag
 from typing import Optional
 import requests
 import random
-import time
 
 
-SLEEP_SECONDS = 3
 PROXY_RESOURCE = "https://free-proxy-list.net/"
 USER_AGENTS = [
 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
@@ -84,5 +82,4 @@ class ProxyRequest:
         except ProxyError as e:
             print(e)
             self.remove_proxy(proxy)
-            time.sleep(SLEEP_SECONDS)
             return None, str(e)

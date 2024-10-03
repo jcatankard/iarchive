@@ -3,8 +3,10 @@ from proxy_request import ProxyRequest
 from bs4 import BeautifulSoup
 from typing import Optional
 import streamlit as st
+import time
 
 
+SLEEP_SECONDS = 3
 URL_PREFIX = "https://archive.ph/"
 TITLE = "Judit's iArchive"
 MAX_RETRIES = 5
@@ -21,18 +23,15 @@ def fetch_page(url: str) -> Optional[str]:
             st.success("Success")
             return response
         else:
-            st.warning(f"Retrying with new proxy: {count + 1}.")
+            st.warning(f"Retrying with new proxy in {SLEEP_SECONDS} seconds: {count + 1}.")
+            time.sleep(SLEEP_SECONDS)
             count += 1
     st.warning("Max retries made. Try a new URL.")
     return None
 
 
 if __name__ == "__main__":
-    st.set_page_config(
-        page_icon=":mag:",
-        page_title=TITLE,
-        layout="centered"
-    )
+    st.set_page_config(page_icon=":mag:", page_title=TITLE, layout="centered")
     st.title(TITLE)
 
     link = st.text_input("Webpage to lookup", placeholder="Add link here...")
